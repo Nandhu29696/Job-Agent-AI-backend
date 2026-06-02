@@ -4,7 +4,8 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.models.user import User
+from app.models.user import User, UserRole
+from app.models.employee import Employee
 from app.schemas.user import UserCreate
 from app.config import settings
 
@@ -36,12 +37,21 @@ async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
 
 
 async def create_user(db: AsyncSession, data: UserCreate) -> User:
+    role = data.role if data.role in (UserRole.ADMIN, UserRole.EMPLOYEE) else UserRole.EMPLOYEE
     user = User(
         email=data.email,
         hashed_password=hash_password(data.password),
         full_name=data.full_name,
+        role=role,
     )
     db.add(user)
     await db.flush()
+
+    # Auto-create an Employee record for every employee-role user
+    if role == UserRole.EMPLOYEE:
+        employee = Employee(user_id=user.id)
+        db.add(employee)
+        await db.flush()
+
     await db.refresh(user)
     return user

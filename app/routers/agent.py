@@ -15,6 +15,7 @@ from app.schemas.agent import (
 from app.services.ai_agent import chat_with_agent, generate_cover_letter, analyze_job_match
 from app.dependencies import get_current_user
 from app.models.user import User
+from app.models.employee import Employee
 
 router = APIRouter()
 
@@ -34,7 +35,9 @@ async def generate_cover_letter_for_job(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if not current_user.resume_text:
+    emp_result = await db.execute(select(Employee).where(Employee.user_id == current_user.id))
+    employee = emp_result.scalar_one_or_none()
+    if not employee or not employee.resume_text:
         raise HTTPException(status_code=400, detail="Please add your resume first")
 
     result = await db.execute(select(Job).where(Job.id == job_id))
@@ -46,7 +49,7 @@ async def generate_cover_letter_for_job(
         job_title=job.title,
         company=job.company,
         job_description=job.description or "",
-        resume_text=current_user.resume_text,
+        resume_text=employee.resume_text,
         user_name=current_user.full_name or current_user.email,
     )
     return {"cover_letter": cover_letter}
@@ -67,7 +70,9 @@ async def get_match_score_for_job(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if not current_user.resume_text:
+    emp_result = await db.execute(select(Employee).where(Employee.user_id == current_user.id))
+    employee = emp_result.scalar_one_or_none()
+    if not employee or not employee.resume_text:
         raise HTTPException(status_code=400, detail="Please add your resume first")
 
     result = await db.execute(select(Job).where(Job.id == job_id))
@@ -77,7 +82,7 @@ async def get_match_score_for_job(
 
     score_data = await analyze_job_match(
         job_description=f"{job.title}\n{job.description or ''}\n{job.requirements or ''}",
-        resume_text=current_user.resume_text,
+        resume_text=employee.resume_text,
     )
 
     # Persist score on matching application if exists
@@ -86,7 +91,7 @@ async def get_match_score_for_job(
             Application.job_id == job_id, Application.user_id == current_user.id
         )
     )
-    app = app_result.scalar_one_or_none()
+    app = app_result.scalars().first()
     if app:
         app.match_score = score_data["score"]
         await db.flush()

@@ -3,7 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.database import engine, Base
-from app.routers import jobs, users, agent, applications
+from app.routers import jobs, users, agent, applications, employees
+# Import models so SQLAlchemy registers them before create_all
+import app.models.user  # noqa: F401
+import app.models.employee  # noqa: F401
+import app.models.job  # noqa: F401
+import app.models.application  # noqa: F401
 
 
 @asynccontextmanager
@@ -32,6 +37,7 @@ app.add_middleware(
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs"])
 app.include_router(applications.router, prefix="/api/applications", tags=["Applications"])
+app.include_router(employees.router, prefix="/api/employees", tags=["Employees"])
 app.include_router(agent.router, prefix="/api/agent", tags=["AI Agent"])
 
 

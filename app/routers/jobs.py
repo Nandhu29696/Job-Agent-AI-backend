@@ -6,9 +6,10 @@ from sqlalchemy import select, or_
 
 from app.database import get_db
 from app.models.job import Job
+from app.models.employee import Employee
 from app.schemas.job import JobCreate, JobOut, JobUpdate
-from app.dependencies import get_current_user, get_optional_user
-from app.models.user import User
+from app.dependencies import get_current_user, get_optional_user, require_admin
+from app.models.user import User, UserRole
 
 router = APIRouter()
 
@@ -19,10 +20,11 @@ async def list_jobs(
     location: str | None = None,
     remote: bool | None = None,
     job_type: str | None = None,
+    match_skills: bool = Query(False, description="Filter jobs matching the logged-in employee's skills"),
     skip: int = 0,
     limit: int = 20,
     db: AsyncSession = Depends(get_db),
-    _: Optional[User] = Depends(get_optional_user),
+    current_user: Optional[User] = Depends(get_optional_user),
 ):
     stmt = select(Job).where(Job.is_active == True)
 
@@ -41,6 +43,25 @@ async def list_jobs(
     if job_type:
         stmt = stmt.where(Job.job_type == job_type)
 
+    # Skills-based filtering: match employee skills against job title/requirements/description
+    if match_skills and current_user and current_user.role == UserRole.EMPLOYEE:
+        emp_result = await db.execute(
+            select(Employee).where(Employee.user_id == current_user.id)
+        )
+        employee = emp_result.scalar_one_or_none()
+        if employee and employee.skills:
+            skill_list = [s.strip() for s in employee.skills.split(",") if s.strip()]
+            if skill_list:
+                skill_filters = [
+                    or_(
+                        Job.title.ilike(f"%{skill}%"),
+                        Job.description.ilike(f"%{skill}%"),
+                        Job.requirements.ilike(f"%{skill}%"),
+                    )
+                    for skill in skill_list
+                ]
+                stmt = stmt.where(or_(*skill_filters))
+
     stmt = stmt.order_by(Job.created_at.desc()).offset(skip).limit(limit)
     result = await db.execute(stmt)
     return result.scalars().all()
@@ -50,7 +71,7 @@ async def list_jobs(
 async def create_job(
     data: JobCreate,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
+    _: User = Depends(require_admin),
 ):
     job = Job(**data.model_dump())
     db.add(job)
@@ -77,7 +98,7 @@ async def update_job(
     job_id: uuid.UUID,
     data: JobUpdate,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
+    _: User = Depends(require_admin),
 ):
     result = await db.execute(select(Job).where(Job.id == job_id))
     job = result.scalar_one_or_none()
@@ -94,7 +115,7 @@ async def update_job(
 async def delete_job(
     job_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _: User = Depends(get_current_user),
+    _: User = Depends(require_admin),
 ):
     result = await db.execute(select(Job).where(Job.id == job_id))
     job = result.scalar_one_or_none()

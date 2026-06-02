@@ -1,5 +1,5 @@
-"""
-Seed script — populates the database with test data to verify all APIs.
+﻿"""
+Seed script â€” populates the database with test data to verify all APIs.
 
 Usage:
     python seed.py            # seed data
@@ -11,50 +11,61 @@ import sys
 import uuid
 from datetime import datetime
 
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import engine, AsyncSessionLocal
-from app.models.user import User
+from app.models.user import User, UserRole
+from app.models.employee import Employee
 from app.models.job import Job
 from app.models.application import Application
 from app.services.auth import hash_password
 from app.database import Base
 
 
-# ── Test credentials (printed at the end) ──────────────────────────────────
+# â”€â”€ Test credentials (printed at the end) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 TEST_USERS = [
+    {
+        "email": "admin@example.com",
+        "password": "admin123",
+        "full_name": "Admin User",
+        "role": UserRole.ADMIN,
+    },
     {
         "email": "alice@example.com",
         "password": "password123",
         "full_name": "Alice Johnson",
-        "skills": "Python, FastAPI, PostgreSQL, React, Machine Learning",
+        "role": UserRole.EMPLOYEE,
+        "skills": "python,fastapi,postgresql,react,machine learning",
         "resume_text": (
             "Alice Johnson | alice@example.com\n\n"
             "EXPERIENCE\n"
-            "Senior Backend Engineer — TechCorp (2021–Present)\n"
-            "  • Built REST APIs with FastAPI and PostgreSQL\n"
-            "  • Deployed ML models to production using Docker & Kubernetes\n\n"
+            "Senior Backend Engineer â€” TechCorp (2021â€“Present)\n"
+            "  â€¢ Built REST APIs with FastAPI and PostgreSQL\n"
+            "  â€¢ Deployed ML models to production using Docker & Kubernetes\n\n"
             "SKILLS\n"
             "Python, FastAPI, PostgreSQL, React, Docker, AWS, Machine Learning\n\n"
             "EDUCATION\n"
-            "B.Sc. Computer Science — State University, 2018"
+            "B.Sc. Computer Science â€” State University, 2018"
         ),
+        "experience_years": 5.0,
     },
     {
         "email": "bob@example.com",
         "password": "password123",
         "full_name": "Bob Smith",
-        "skills": "JavaScript, React, Node.js, TypeScript",
+        "role": UserRole.EMPLOYEE,
+        "skills": "javascript,react,node.js,typescript",
         "resume_text": (
             "Bob Smith | bob@example.com\n\n"
             "EXPERIENCE\n"
-            "Frontend Developer — WebAgency (2020–Present)\n"
-            "  • Built SPAs with React and TypeScript\n"
-            "  • Integrated REST and GraphQL APIs\n\n"
+            "Frontend Developer â€” WebAgency (2020â€“Present)\n"
+            "  â€¢ Built SPAs with React and TypeScript\n"
+            "  â€¢ Integrated REST and GraphQL APIs\n\n"
             "SKILLS\n"
             "JavaScript, TypeScript, React, Node.js, GraphQL, Tailwind CSS"
         ),
+        "experience_years": 4.0,
     },
 ]
 
@@ -69,11 +80,11 @@ TEST_JOBS = [
             "You will collaborate closely with data scientists and frontend engineers."
         ),
         "requirements": (
-            "• 4+ years of Python experience\n"
-            "• Experience with FastAPI or Django REST Framework\n"
-            "• Proficiency with PostgreSQL and Redis\n"
-            "• Familiarity with Docker and Kubernetes\n"
-            "• Strong understanding of async programming"
+            "â€¢ 4+ years of Python experience\n"
+            "â€¢ Experience with FastAPI or Django REST Framework\n"
+            "â€¢ Proficiency with PostgreSQL and Redis\n"
+            "â€¢ Familiarity with Docker and Kubernetes\n"
+            "â€¢ Strong understanding of async programming"
         ),
         "salary_min": 120000,
         "salary_max": 160000,
@@ -92,11 +103,11 @@ TEST_JOBS = [
             "You will work with a modern stack: React, TypeScript, Tailwind CSS, and Vite."
         ),
         "requirements": (
-            "• 3+ years of React experience\n"
-            "• TypeScript proficiency\n"
-            "• Experience with REST API integration\n"
-            "• Knowledge of CSS / Tailwind\n"
-            "• Familiarity with testing (Jest, Vitest)"
+            "â€¢ 3+ years of React experience\n"
+            "â€¢ TypeScript proficiency\n"
+            "â€¢ Experience with REST API integration\n"
+            "â€¢ Knowledge of CSS / Tailwind\n"
+            "â€¢ Familiarity with testing (Jest, Vitest)"
         ),
         "salary_min": 100000,
         "salary_max": 140000,
@@ -115,11 +126,11 @@ TEST_JOBS = [
             "You will own the full ML lifecycle from data exploration to production deployment."
         ),
         "requirements": (
-            "• Strong Python skills (NumPy, Pandas, Scikit-learn)\n"
-            "• Experience with PyTorch or TensorFlow\n"
-            "• MLOps experience (MLflow, Airflow, or similar)\n"
-            "• Cloud platform experience (AWS/GCP/Azure)\n"
-            "• Statistics and linear algebra fundamentals"
+            "â€¢ Strong Python skills (NumPy, Pandas, Scikit-learn)\n"
+            "â€¢ Experience with PyTorch or TensorFlow\n"
+            "â€¢ MLOps experience (MLflow, Airflow, or similar)\n"
+            "â€¢ Cloud platform experience (AWS/GCP/Azure)\n"
+            "â€¢ Statistics and linear algebra fundamentals"
         ),
         "salary_min": 140000,
         "salary_max": 190000,
@@ -134,15 +145,15 @@ TEST_JOBS = [
         "location": "Remote",
         "description": (
             "Join our fast-growing startup as a Full Stack Developer. "
-            "You will build features across our entire stack — Python backend, React frontend, "
+            "You will build features across our entire stack â€” Python backend, React frontend, "
             "and PostgreSQL database."
         ),
         "requirements": (
-            "• 2+ years full stack experience\n"
-            "• Python (FastAPI or Flask) backend skills\n"
-            "• React / JavaScript frontend skills\n"
-            "• SQL database knowledge\n"
-            "• Git and CI/CD fundamentals"
+            "â€¢ 2+ years full stack experience\n"
+            "â€¢ Python (FastAPI or Flask) backend skills\n"
+            "â€¢ React / JavaScript frontend skills\n"
+            "â€¢ SQL database knowledge\n"
+            "â€¢ Git and CI/CD fundamentals"
         ),
         "salary_min": 90000,
         "salary_max": 120000,
@@ -160,11 +171,11 @@ TEST_JOBS = [
             "CI/CD pipelines, and observability stack."
         ),
         "requirements": (
-            "• Experience with AWS or Azure\n"
-            "• Kubernetes and Docker proficiency\n"
-            "• Terraform or Pulumi IaC experience\n"
-            "• CI/CD pipeline experience (GitHub Actions, Jenkins)\n"
-            "• Linux administration skills"
+            "â€¢ Experience with AWS or Azure\n"
+            "â€¢ Kubernetes and Docker proficiency\n"
+            "â€¢ Terraform or Pulumi IaC experience\n"
+            "â€¢ CI/CD pipeline experience (GitHub Actions, Jenkins)\n"
+            "â€¢ Linux administration skills"
         ),
         "salary_min": 110000,
         "salary_max": 150000,
@@ -179,10 +190,10 @@ TEST_JOBS = [
         "location": "Remote",
         "description": "Contract position for a Data Analyst to build dashboards and run ad-hoc analyses.",
         "requirements": (
-            "• SQL proficiency\n"
-            "• Python (Pandas) for data wrangling\n"
-            "• Experience with BI tools (Tableau, Power BI, or Metabase)\n"
-            "• Strong communication skills"
+            "â€¢ SQL proficiency\n"
+            "â€¢ Python (Pandas) for data wrangling\n"
+            "â€¢ Experience with BI tools (Tableau, Power BI, or Metabase)\n"
+            "â€¢ Strong communication skills"
         ),
         "salary_min": 70000,
         "salary_max": 90000,
@@ -195,12 +206,13 @@ TEST_JOBS = [
 
 
 async def clear_data(db: AsyncSession):
-    print("  Clearing existing data…")
+    print("  Clearing existing dataâ€¦")
     await db.execute(delete(Application))
+    await db.execute(delete(Employee))
     await db.execute(delete(Job))
     await db.execute(delete(User))
     await db.commit()
-    print("  ✓ All tables cleared")
+    print("  âœ“ All tables cleared")
 
 
 async def seed(clear: bool = False):
@@ -212,18 +224,14 @@ async def seed(clear: bool = False):
         if clear:
             await clear_data(db)
 
-        # ── Users ──────────────────────────────────────────────────────────
-        print("\nSeeding users…")
+        # â”€â”€ Users + Employees â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        print("\nSeeding usersâ€¦")
         created_users = []
         for u in TEST_USERS:
-            existing = await db.execute(
-                __import__("sqlalchemy", fromlist=["select"]).select(User).where(User.email == u["email"])
-            )
+            existing = await db.execute(select(User).where(User.email == u["email"]))
             if existing.scalar_one_or_none():
-                print(f"  ⚠  User {u['email']} already exists — skipping")
-                result = await db.execute(
-                    __import__("sqlalchemy", fromlist=["select"]).select(User).where(User.email == u["email"])
-                )
+                print(f"  âš   User {u['email']} already exists â€” skipping")
+                result = await db.execute(select(User).where(User.email == u["email"]))
                 created_users.append(result.scalar_one())
                 continue
 
@@ -232,20 +240,36 @@ async def seed(clear: bool = False):
                 email=u["email"],
                 hashed_password=hash_password(u["password"]),
                 full_name=u["full_name"],
-                skills=u["skills"],
-                resume_text=u["resume_text"],
+                role=u["role"],
                 is_active=True,
                 created_at=datetime.utcnow(),
                 updated_at=datetime.utcnow(),
             )
             db.add(user)
+            await db.flush()
+
+            # Auto-create Employee record for employee-role users
+            if u["role"] == UserRole.EMPLOYEE:
+                employee = Employee(
+                    emp_id=uuid.uuid4(),
+                    user_id=user.id,
+                    skills=u.get("skills"),
+                    resume_text=u.get("resume_text"),
+                    experience_years=u.get("experience_years"),
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow(),
+                )
+                db.add(employee)
+                print(f"  âœ“ Employee: {u['email']}  (skills: {u.get('skills', 'none')})")
+            else:
+                print(f"  âœ“ Admin: {u['email']}")
+
             created_users.append(user)
-            print(f"  ✓ User: {u['email']}  (password: {u['password']})")
 
         await db.flush()
 
-        # ── Jobs ───────────────────────────────────────────────────────────
-        print("\nSeeding jobs…")
+        # â”€â”€ Jobs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        print("\nSeeding jobsâ€¦")
         created_jobs = []
         for j in TEST_JOBS:
             job = Job(
@@ -267,22 +291,27 @@ async def seed(clear: bool = False):
             )
             db.add(job)
             created_jobs.append(job)
-            print(f"  ✓ Job: {j['title']} @ {j['company']}")
+            print(f"  âœ“ Job: {j['title']} @ {j['company']}")
 
         await db.flush()
 
-        # ── Applications ───────────────────────────────────────────────────
-        print("\nSeeding applications…")
-        apps = [
-            # Alice's applications
-            {"user": created_users[0], "job": created_jobs[0], "status": "applied",      "match_score": 92.0, "notes": "Great match — strong Python skills"},
-            {"user": created_users[0], "job": created_jobs[2], "status": "interviewing", "match_score": 85.0, "notes": "Phone screen done, technical next week"},
-            {"user": created_users[0], "job": created_jobs[3], "status": "saved",        "match_score": 78.0, "notes": "Startup, consider after interviews"},
-            {"user": created_users[0], "job": created_jobs[4], "status": "rejected",     "match_score": 45.0, "notes": "Missing Kubernetes experience"},
-            # Bob's applications
-            {"user": created_users[1], "job": created_jobs[1], "status": "offered",      "match_score": 95.0, "notes": "Offer received — $130k"},
-            {"user": created_users[1], "job": created_jobs[3], "status": "applied",      "match_score": 80.0, "notes": "Applied via LinkedIn"},
-        ]
+        # Get employee users only (skip admin at index 0)
+        employee_users = [u for u in created_users if u.role == UserRole.EMPLOYEE]
+
+        # â”€â”€ Applications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        print("\nSeeding applicationsâ€¦")
+        apps = []
+        if len(employee_users) >= 2:
+            apps = [
+                # Alice's applications
+                {"user": employee_users[0], "job": created_jobs[0], "status": "applied",      "match_score": 92.0, "notes": "Great match â€” strong Python skills"},
+                {"user": employee_users[0], "job": created_jobs[2], "status": "interviewing", "match_score": 85.0, "notes": "Phone screen done, technical next week"},
+                {"user": employee_users[0], "job": created_jobs[3], "status": "saved",        "match_score": 78.0, "notes": "Startup, consider after interviews"},
+                {"user": employee_users[0], "job": created_jobs[4], "status": "rejected",     "match_score": 45.0, "notes": "Missing Kubernetes experience"},
+                # Bob's applications
+                {"user": employee_users[1], "job": created_jobs[1], "status": "offered",      "match_score": 95.0, "notes": "Offer received â€” $130k"},
+                {"user": employee_users[1], "job": created_jobs[3], "status": "applied",      "match_score": 80.0, "notes": "Applied via LinkedIn"},
+            ]
 
         for a in apps:
             application = Application(
@@ -297,23 +326,22 @@ async def seed(clear: bool = False):
                 updated_at=datetime.utcnow(),
             )
             db.add(application)
-            print(f"  ✓ Application: {a['user'].full_name} → {a['job'].title} [{a['status']}]")
+            print(f"  âœ“ Application: {a['user'].full_name} â†’ {a['job'].title} [{a['status']}]")
 
         await db.commit()
 
-    # ── Summary ────────────────────────────────────────────────────────────
+    # â”€â”€ Summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     print("\n" + "=" * 60)
     print("  SEED COMPLETE")
     print("=" * 60)
     print(f"\n  Users    : {len(TEST_USERS)}")
     print(f"  Jobs     : {len(TEST_JOBS)}")
     print(f"  Apps     : {len(apps)}")
-    print("\n  ── Test Credentials ──────────────────────────────────────")
+    print("\n  â”€â”€ Test Credentials â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")
     for u in TEST_USERS:
-        print(f"  Email   : {u['email']}")
-        print(f"  Password: {u['password']}")
-        print()
-    print("  ── Quick API Test (after server starts) ──────────────────")
+        print(f"  [{u['role'].upper()}]  {u['email']}  /  {u['password']}")
+    print()
+    print("  â”€â”€ Quick API Test (after server starts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")
     print("  Swagger UI : http://localhost:8000/docs")
     print("  Health     : http://localhost:8000/health")
     print("  Jobs list  : http://localhost:8000/api/jobs")
@@ -323,5 +351,5 @@ async def seed(clear: bool = False):
 if __name__ == "__main__":
     clear = "--clear" in sys.argv
     if clear:
-        print("⚠  --clear flag detected: all existing data will be deleted first.")
+        print("âš   --clear flag detected: all existing data will be deleted first.")
     asyncio.run(seed(clear=clear))

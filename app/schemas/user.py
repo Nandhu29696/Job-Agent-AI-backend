@@ -10,20 +10,18 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    role: str = "employee"   # "admin" or "employee"
 
 
 class UserUpdate(BaseModel):
     full_name: str | None = None
-    resume_text: str | None = None
-    skills: str | None = None
 
 
 class UserOut(UserBase):
     id: uuid.UUID
+    role: str
     is_active: bool
     created_at: datetime
-    resume_text: str | None = None
-    skills: str | None = None
 
     model_config = {"from_attributes": True}
 
