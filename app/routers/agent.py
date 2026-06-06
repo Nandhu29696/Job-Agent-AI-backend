@@ -1,4 +1,3 @@
-import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -31,7 +30,7 @@ async def agent_chat(
 
 @router.post("/cover-letter/{job_id}")
 async def generate_cover_letter_for_job(
-    job_id: uuid.UUID,
+    job_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -66,7 +65,7 @@ async def get_match_score(
 
 @router.post("/match-score/{job_id}", response_model=MatchScoreResponse)
 async def get_match_score_for_job(
-    job_id: uuid.UUID,
+    job_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):

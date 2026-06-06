@@ -1,8 +1,6 @@
-import uuid
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models.employee import Employee
@@ -64,7 +62,7 @@ async def list_employees(
 
 @router.get("/{emp_id}", response_model=EmployeeOut)
 async def get_employee(
-    emp_id: uuid.UUID,
+    emp_id: int,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
 ):
@@ -78,7 +76,7 @@ async def get_employee(
 
 @router.delete("/{emp_id}", status_code=204)
 async def delete_employee(
-    emp_id: uuid.UUID,
+    emp_id: int,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
 ):

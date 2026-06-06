@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from urllib.parse import quote_plus
 
 
 class Settings(BaseSettings):
@@ -9,7 +10,7 @@ class Settings(BaseSettings):
     db_name: str = "job_agent"
     db_user: str = "postgres"
     db_password: str = "1234"
-    db_type: str = "postgres"
+    db_type: str = "postgresql"
 
     # Ollama
     ollama_base_url: str = "http://localhost:11434"
@@ -25,7 +26,25 @@ class Settings(BaseSettings):
 
     @property
     def database_url(self) -> str:
-        return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+        db_type = (self.db_type or "postgresql").strip().lower()
+        user = quote_plus(self.db_user)
+        password = quote_plus(self.db_password)
+
+        if db_type in ("postgres", "postgresql"):
+            return (
+                f"postgresql+asyncpg://{user}:{password}@"
+                f"{self.db_host}:{self.db_port}/{self.db_name}"
+            )
+
+        if db_type in ("mysql", "mariadb"):
+            return (
+                f"mysql+asyncmy://{user}:{password}@"
+                f"{self.db_host}:{self.db_port}/{self.db_name}"
+            )
+
+        raise ValueError(
+            "Unsupported DB_TYPE. Use one of: postgresql, postgres, mysql, mariadb"
+        )
 
     class Config:
         env_file = ".env"

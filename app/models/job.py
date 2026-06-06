@@ -1,17 +1,25 @@
-import uuid
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from sqlalchemy import Integer
 from datetime import datetime
 from sqlalchemy import String, DateTime, Text, Float, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
 
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.models.application import Application
 
 
 class Job(Base):
     __tablename__ = "jobs"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     company: Mapped[str] = mapped_column(String(255), nullable=False, index=True)

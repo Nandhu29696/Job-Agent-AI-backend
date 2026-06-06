@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -17,8 +16,8 @@ class EmployeeUpdate(EmployeeBase):
 
 
 class EmployeeOut(EmployeeBase):
-    emp_id: uuid.UUID
-    user_id: uuid.UUID
+    emp_id: int
+    user_id: int
     created_at: datetime
     updated_at: datetime
 

@@ -1,4 +1,3 @@
-import uuid
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -82,7 +81,7 @@ async def create_job(
 
 @router.get("/{job_id}", response_model=JobOut)
 async def get_job(
-    job_id: uuid.UUID,
+    job_id: int,
     db: AsyncSession = Depends(get_db),
     _: Optional[User] = Depends(get_optional_user),
 ):
@@ -95,7 +94,7 @@ async def get_job(
 
 @router.patch("/{job_id}", response_model=JobOut)
 async def update_job(
-    job_id: uuid.UUID,
+    job_id: int,
     data: JobUpdate,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
@@ -113,7 +112,7 @@ async def update_job(
 
 @router.delete("/{job_id}", status_code=204)
 async def delete_job(
-    job_id: uuid.UUID,
+    job_id: int,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
 ):

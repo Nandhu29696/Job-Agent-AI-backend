@@ -1,21 +1,31 @@
-import uuid
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from sqlalchemy import Integer
 from datetime import datetime
 from sqlalchemy import String, DateTime, Text, Float, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
-
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 class Employee(Base):
     __tablename__ = "employees"
 
-    emp_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    emp_id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
-        unique=True, nullable=False, index=True
+
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False
     )
     resume_text: Mapped[str] = mapped_column(Text, nullable=True)
     # Comma-separated skill list, e.g. "python,fastapi,react"

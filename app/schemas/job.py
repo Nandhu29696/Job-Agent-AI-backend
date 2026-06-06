@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -36,7 +35,7 @@ class JobUpdate(BaseModel):
 
 
 class JobOut(JobBase):
-    id: uuid.UUID
+    id: int
     is_active: bool
     posted_at: datetime | None = None
     created_at: datetime

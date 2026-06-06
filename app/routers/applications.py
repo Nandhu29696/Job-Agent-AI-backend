@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -59,7 +58,7 @@ async def create_application(
 
 @router.patch("/{app_id}", response_model=ApplicationOut)
 async def update_application(
-    app_id: uuid.UUID,
+    app_id: int,
     data: ApplicationUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -87,7 +86,7 @@ async def update_application(
 
 @router.delete("/{app_id}", status_code=204)
 async def delete_application(
-    app_id: uuid.UUID,
+    app_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):

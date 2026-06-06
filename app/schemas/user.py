@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 from pydantic import BaseModel, EmailStr
 
@@ -18,7 +17,7 @@ class UserUpdate(BaseModel):
 
 
 class UserOut(UserBase):
-    id: uuid.UUID
+    id: int
     role: str
     is_active: bool
     created_at: datetime

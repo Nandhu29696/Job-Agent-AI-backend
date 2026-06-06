@@ -26,7 +26,7 @@ async def get_current_user(
         )
     try:
         payload = decode_token(credentials.credentials)
-        user_id: str = payload.get("sub")
+        user_id = int(payload["sub"])
         if not user_id:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     except JWTError:
@@ -48,10 +48,10 @@ async def get_optional_user(
         return None
     try:
         payload = decode_token(credentials.credentials)
-        user_id: str = payload.get("sub")
+        user_id: int = int(payload["sub"])
         if not user_id:
             return None
-    except JWTError:
+    except (JWTError, ValueError):
         return None
 
     result = await db.execute(select(User).where(User.id == user_id))

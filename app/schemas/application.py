@@ -1,11 +1,10 @@
-import uuid
 from datetime import datetime
 from pydantic import BaseModel
 from app.schemas.job import JobOut
 
 
 class ApplicationBase(BaseModel):
-    job_id: uuid.UUID
+    job_id: int
     status: str = "saved"
     cover_letter: str | None = None
     notes: str | None = None
@@ -23,8 +22,8 @@ class ApplicationUpdate(BaseModel):
 
 
 class ApplicationOut(ApplicationBase):
-    id: uuid.UUID
-    user_id: uuid.UUID
+    id: int
+    user_id: int
     match_score: float | None = None
     applied_at: datetime | None = None
     created_at: datetime
