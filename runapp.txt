@@ -1,6 +1,6 @@
 uvicorn app.main:app --port 8000 --reload
 
-cd "d:\project\AI Modules\Job Agent AI\backend" ; & ".\authenv\Scripts\python.exe" -m uvicorn app.main:app --reload --port 8000
+cd "d:\project\AI Modules\Job Agent AI\backend" ; & ".\loanenv\Scripts\python.exe" -m uvicorn app.main:app --reload --port 8000
 
 admin@example.com / admin123
 

@@ -10,19 +10,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Database environment variables
-ENV DB_HOST=localhost \
-    DB_PORT=5432 \
-    DB_NAME=job_agent \
-    DB_USER=postgres \
-    DB_PASSWORD=1234 \
-    DB_TYPE=postgres
+# Run as a non-root user
+RUN useradd --create-home appuser && chown -R appuser /app
+USER appuser
 
-# OpenAI / App
-ENV OPENAI_MODEL=gpt-4o-mini \
-    ALGORITHM=HS256 \
-    ACCESS_TOKEN_EXPIRE_MINUTES=10080
+# Non-secret defaults; secrets come from .env / the orchestrator
+ENV DB_PORT=5432 \
+    DB_TYPE=postgresql \
+    ALGORITHM=HS256
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]

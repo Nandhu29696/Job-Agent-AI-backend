@@ -18,14 +18,16 @@ from app.models.application import Application
 from app.models.employee import Employee
 from app.models.job import Job
 from app.models.user import User, UserRole
-from app.services.auth import hash_password
+from app.core.security import hash_password
+from app.db.migrate import sync_schema
+import app.models  # noqa: F401
 
 TEST_USERS = [
     {
         "email": "admin@example.com",
         "password": "admin123",
         "full_name": "Admin User",
-        "role": UserRole.ADMIN,
+        "role": UserRole.SUPER_ADMIN,
     },
     {
         "email": "alice@example.com",
@@ -118,7 +120,7 @@ async def clear_data(db: AsyncSession):
 
 async def seed(clear: bool = False):
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(sync_schema)
 
     async with AsyncSessionLocal() as db:
         if clear:
@@ -140,6 +142,7 @@ async def seed(clear: bool = False):
                     full_name=u["full_name"],
                     role=u["role"],
                     is_active=True,
+                    is_verified=True,
                     created_at=datetime.utcnow(),
                     updated_at=datetime.utcnow(),
                 )

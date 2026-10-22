@@ -43,6 +43,14 @@ async def create_application(
     if not job_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Job not found")
 
+    duplicate = await db.execute(
+        select(Application.id).where(
+            Application.user_id == current_user.id, Application.job_id == data.job_id
+        )
+    )
+    if duplicate.first():
+        raise HTTPException(status_code=409, detail="This job is already in your applications")
+
     app = Application(user_id=current_user.id, **data.model_dump())
     db.add(app)
     await db.flush()

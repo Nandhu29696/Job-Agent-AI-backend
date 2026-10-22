@@ -20,12 +20,15 @@ async def list_jobs(
     remote: bool | None = None,
     job_type: str | None = None,
     match_skills: bool = Query(False, description="Filter jobs matching the logged-in employee's skills"),
-    skip: int = 0,
-    limit: int = 20,
+    include_inactive: bool = Query(False, description="Admins only: include unlisted jobs"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_optional_user),
 ):
-    stmt = select(Job).where(Job.is_active == True)
+    stmt = select(Job)
+    if not (include_inactive and current_user and current_user.role in UserRole.STAFF):
+        stmt = stmt.where(Job.is_active == True)  # noqa: E712
 
     if q:
         stmt = stmt.where(

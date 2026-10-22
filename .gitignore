@@ -103,3 +103,5 @@ lancedb/
 
 # Exclude temporary files
 temp/
+# Local virtualenv
+authenv/
