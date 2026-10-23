@@ -7,3 +7,17 @@ admin@example.com / admin123
 alice@example.com / password123
 
 bob@example.com / password123
+
+
+
+DB Creation in VPS
+
+enable DB 
+sudo -u postgres psql
+
+create a role
+CREATE USER job_agent WITH PASSWORD 'jobai1234';
+
+create DB
+CREATE DATABASE job_agent_db OWNER job_agent;
+

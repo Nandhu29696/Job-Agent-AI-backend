@@ -62,10 +62,6 @@ target/
 # DotEnv configuration
 .env
 
-# Database
-*.db
-*.rdb
-
 # Pycharm
 .idea
 
