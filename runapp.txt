@@ -21,3 +21,37 @@ CREATE USER job_agent WITH PASSWORD 'jobai1234';
 create DB
 CREATE DATABASE job_agent_db OWNER job_agent;
 
+psql --version
+sudo -u postgres psql -c "SELECT version();"
+
+cd /var/www/Job-Agent-AI-backend/backups
+
+grep -n "transaction_timeout" database_backup_20261023_070445.sql
+
+sed '/transaction_timeout/d' \
+  database_backup_20261023_070445.sql \
+  > database_backup_compatible.sql
+
+psql -h 127.0.0.1 \
+  -p 5432 \
+  -U job_agent \
+  -d job_agent_db \
+  -v ON_ERROR_STOP=1 \
+  -W \
+  -f /var/www/Job-Agent-AI-backend/backups/database_backup_compatible.sql
+
+psql -h 127.0.0.1 -U job_agent -d job_agent_db -W -c "\dt"
+
+
+Run backend
+
+python3 -m venv venv
+source venv/bin/activate
+
+pip install -r requirements.txt
+
+
+pm2 start /var/www/Job-Agent-AI-backend/venv/bin/python \
+  --name job-agent-backend \
+  --cwd /var/www/Job-Agent-AI-backend \
+  -- -m uvicorn app.main:app --host 127.0.0.1 --port 8002
