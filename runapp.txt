@@ -11,18 +11,21 @@ bob@example.com / password123
 
 
 DB Creation in VPS
+-------------------
 
-enable DB 
+--- enable DB 
 sudo -u postgres psql
 
-create a role
+--- create a ROLE
 CREATE USER job_agent WITH PASSWORD 'jobai1234';
 
-create DB
+--- create DB
 CREATE DATABASE job_agent_db OWNER job_agent;
 
+--- check version
 psql --version
 sudo -u postgres psql -c "SELECT version();"
+
 
 cd /var/www/Job-Agent-AI-backend/backups
 
@@ -55,3 +58,102 @@ pm2 start /var/www/Job-Agent-AI-backend/venv/bin/python \
   --name job-agent-backend \
   --cwd /var/www/Job-Agent-AI-backend \
   -- -m uvicorn app.main:app --host 127.0.0.1 --port 8002
+
+pm2 save
+
+
+-----------------------------------------
+--- change to frontend folder
+
+cd /var/www/Job-Agent-AI-Frontend
+
+--- check project files and available node.js tools
+pwd
+ls -la
+node -v
+npm -v
+pm2 list
+
+--- install dependencies and build 
+cd /var/www/Job-Agent-AI-Frontend
+npm install
+npm run build
+
+--- start the frontend with pm2 
+cd /var/www/Job-Agent-AI-Frontend
+
+--- route /api requests to the backend started on port 8002
+--- Vite otherwise defaults to http://localhost:8000, which can hit a stale backend
+VITE_PROXY_TARGET=http://127.0.0.1:8002 pm2 start npm \
+  --name job-agent-ai-frontend \
+  --cwd /var/www/Job-Agent-AI-Frontend \
+  -- run dev -- --host 127.0.0.1 --port 3003 --strictPort
+
+--- If the frontend is already running, restart it with the updated environment
+VITE_PROXY_TARGET=http://127.0.0.1:8002 pm2 restart job-agent-ai-frontend --update-env
+
+--- check status
+pm2 list
+pm2 logs job-agent-ai-frontend --lines 30
+
+--- test the internal frontend
+curl -I http://127.0.0.1:3003/
+
+--- check https certificate
+sudo certbot certificates
+
+--- verify the setup files
+/etc/letsencrypt/live/vps-ip/fullchain.pem
+/etc/letsencrypt/live/vps-ip/privkey.pem
+
+--- check file exist
+sudo ls -l /etc/letsencrypt/live/vps-ip/
+
+--- if expire renew it
+sudo certbot renew
+
+--- Configure Nginx for HTTPS
+sudo nano /etc/nginx/conf.d/job-agent-ai-frontend.conf
+
+--- paste this configuration
+server {
+    listen 3002 ssl;
+    server_name 187.127.166.46;
+
+    ssl_certificate /etc/letsencrypt/live/vps-ip/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/vps-ip/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+
+    location / {
+        proxy_pass http://127.0.0.1:3003;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+
+validate and reload Nginx
+--- sudo nginx -t
+--- sudo systemctl reload nginx
+
+--- Test connection 
+curl -I http://127.0.0.1:3003/
+
+--- HTTPS through Nginx:
+curl -k -sS -o /dev/null \
+  -w 'HTTPS status: %{http_code}\n' \
+  https://127.0.0.1:3002/ \
+  -H 'Host: 187.127.166.46'
+
+--- save and check log and port
+pm2 save
+pm2 list
+pm2 logs job-agent-ai-frontend --lines 50
+sudo nginx -t
+sudo ss -lntp | grep -E ':(3002|3003)\b'
